@@ -1,11 +1,4 @@
 {
-    "compilerOptions": {
-      "target": "es2015",
-      "module": "commonjs",
-      "declaration": true,
-      "outDir": "./lib",
-      "strict": true
-    },
-    "include": ["src"],
-    "exclude": ["node_modules"]
-  }
+  "extends": "@tsconfig/node18-strictest/tsconfig.json",
+  "include": ["src/**/*"]
+}

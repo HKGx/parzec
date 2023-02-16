@@ -3,14 +3,14 @@
   "version": "1.0.2",
   "description": "Parser combinators for Typescript",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "scripts": {
-    "test": "node ./lib/test/exprtests.js && node ./lib/test/jsontests.js",
-    "build": "tsc",
+    "build": "npm run build:esbuild && npm run build:types",
+    "build:types": "tsc --emitDeclarationOnly --declaration --declarationDir lib",
+    "build:esbuild": "node ./scripts/build.mjs",
+    "watch": "node ./scripts/watch.mjs",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test",
-    "postversion": "git push && git push --tags",
-    "lits": "lits",
-    "lits-watch": "lits --watch"
+    "prepublishOnly": "npm test"
   },
   "repository": {
     "type": "git",
@@ -28,10 +28,12 @@
   },
   "homepage": "https://johtela.github.io/parzec",
   "devDependencies": {
-    "@types/node": "^16.4.13",
+    "@es-exec/esbuild-plugin-serve": "^0.0.4",
+    "@trivago/prettier-plugin-sort-imports": "^4.0.0",
+    "@tsconfig/node18-strictest": "^1.0.0",
+    "@types/node": "^18.13.0",
+    "esbuild": "^0.17.8",
     "fast-check": "^2.17.0",
-    "lits-extras": "^1.0.6",
-    "litscript": "^1.2.0"
-  },
-  "dependencies": {}
+    "prettier": "^2.8.4"
+  }
 }
