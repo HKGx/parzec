@@ -29,5 +29,4 @@ export * from "./result";
 export * from "./error";
 export * from "./lexer";
 export * from "./parser";
-export * from "./arrayparsers";
 export * from "./utils";

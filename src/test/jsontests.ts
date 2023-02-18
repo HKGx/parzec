@@ -42,7 +42,7 @@ function test(name: string, fn: (t: any) => void) {
 
 test("Test arbitrary JSON data", async (t: any) =>
   assert(
-    property(json(), (str) => {
+    property(json(), (str: string) => {
       let obj1 = JSON.parse(str);
       let obj2 = parseJson(str);
       t.deepEqual(

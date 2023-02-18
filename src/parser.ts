@@ -23,6 +23,10 @@ import type { Ref } from "./ref.js";
  */
 export type Parse<T, S> = (input: ParserInput<S>) => ParseResult<T>;
 /**
+ * ## Binary Operator Type
+ */
+export type BinaryOp<T> = (x: T, y: T) => T;
+/**
  * ## Parser Class
  *
  * The central type in the Parzec library is the `Parser<T, S>` class. It wraps
@@ -251,6 +255,46 @@ export class Parser<T, S> {
       );
       return res;
     });
+  }
+  /**
+   * ## Array Parsers
+   */
+  oneOrMoreSeparatedBy<U>(separator: Parser<U, S>): Parser<T[], S> {
+    return this.bind((x) =>
+      separator
+        .seq(this)
+        .zeroOrMore()
+        .bind((xs) => mret([x].concat(xs)))
+    );
+  }
+
+  zeroOrMoreSeparatedBy<U>(separator: Parser<U, S>): Parser<T[], S> {
+    return this.oneOrMoreSeparatedBy(separator).or(mret([]));
+  }
+
+  followedBy<U>(after: Parser<U, S>): Parser<T, S> {
+    return this.bind((p) => after.bind((_) => mret(p)));
+  }
+
+  surroundedBy<U>(surround: Parser<U, S>): Parser<T, S> {
+    return surround.bind(() => this.bind((p) => surround.bind(() => mret(p))));
+  }
+
+  bracketedBy<U, V>(open: Parser<U, S>, close: Parser<V, S>): Parser<T, S> {
+    return open.bind(() => this.bind((p) => close.bind(() => mret(p))));
+  }
+
+  chainOneOrMore(operation: Parser<BinaryOp<T>, S>): Parser<T, S> {
+    return this.bind((x) =>
+      operation
+        .bind((f) => this.bind((y) => mret([f, y] as const)))
+        .zeroOrMore()
+        .bind((fys) => mret(fys.reduce((z, [f, y]) => f(z, y), x)))
+    );
+  }
+
+  chainZeroOrMore(operation: Parser<BinaryOp<T>, S>, value: T): Parser<T, S> {
+    return this.chainOneOrMore(operation).or(mret(value));
   }
 }
 /**
@@ -512,4 +556,12 @@ export function token<T>(token: T): Parser<Token<T>, Token<T>> {
  */
 export function terminal<T>(tok: T, name: string) {
   return token(tok).expect(name);
+}
+
+/**
+ * Construct a parser for operator selection. Used typically in conjunction
+ * with `chain*` functions.
+ */
+export function operators<T, U, S>(...ops: [Parser<T, S>, U][]): Parser<U, S> {
+  return any(...ops.map(([p, o]) => p.map((_) => o)));
 }
