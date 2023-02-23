@@ -1,4 +1,6 @@
 {
   "importOrderSeparation": true,
-  "parser": "babel-ts"
+  "parser": "typescript",
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrderParserPlugins": ["typescript"]
 }

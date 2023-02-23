@@ -5,13 +5,14 @@
  * To learn about monadic parsers refer to the list of literature in the
  * [Wikipedia page](https://en.wikipedia.org/wiki/Parser_combinator).
  */
-import { expectedAsCsv, failed, joinExpected, succeeded } from "./result.js";
 import { ErrorSource, ParseError } from "./error.js";
-import type { ParseResult } from "./result.js";
 import type { ParserInput } from "./input.js";
-import { escapeWhitespace } from "./utils.js";
 import type { Token } from "./lexer.js";
 import type { Ref } from "./ref.js";
+import { expectedAsCsv, failed, joinExpected, succeeded } from "./result.js";
+import type { ParseResult } from "./result.js";
+import { escapeWhitespace } from "./utils.js";
+
 /**
  *
  * ## Parsing Function
@@ -256,8 +257,16 @@ export class Parser<T, S> {
       return res;
     });
   }
+
   /**
-   * ## Array Parsers
+   * ## Parsing Separated Lists
+   */
+
+  /**
+   *
+   * Parse an array containing at least one element. The items of the array are
+   * recognized by `parser`. The items are separated by input recognized by
+   * `separator`. The function returns an array of parsed elements.
    */
   oneOrMoreSeparatedBy<U>(separator: Parser<U, S>): Parser<T[], S> {
     return this.bind((x) =>
@@ -268,22 +277,53 @@ export class Parser<T, S> {
     );
   }
 
+  /**
+   * Parse a potentially empty array. The items of the array are recognized by
+   * `parser`. The items are separated by input recognized by `separator`.
+   */
   zeroOrMoreSeparatedBy<U>(separator: Parser<U, S>): Parser<T[], S> {
     return this.oneOrMoreSeparatedBy(separator).or(mret([]));
   }
 
+  /**
+   * ## Terminators & Brackets
+   */
+
+  /**
+   * Parse item(s) followed by a terminator given in the `after` parser. The
+   * result of `parser` is returned, and result of `after` is ignored.
+   */
   followedBy<U>(after: Parser<U, S>): Parser<T, S> {
     return this.bind((p) => after.bind((_) => mret(p)));
   }
 
+  /**
+   * Parse item(s) surrounded by input recognized by the `surround` parser. The
+   * result of `parser` is returned.
+   */
   surroundedBy<U>(surround: Parser<U, S>): Parser<T, S> {
     return surround.bind(() => this.bind((p) => surround.bind(() => mret(p))));
   }
 
+  /**
+   * Parse item(s) surrounded by an open and closing bracket. The result `parser`
+   * is returned.
+   */
   bracketedBy<U, V>(open: Parser<U, S>, close: Parser<V, S>): Parser<T, S> {
     return open.bind(() => this.bind((p) => close.bind(() => mret(p))));
   }
 
+  /**
+   * ## Parsing Expressions
+   */
+
+  /**
+   * Parse one or more occurrences of `parser`, separated by `operation`.
+   * Return a value obtained by a left associative application of all functions
+   * returned by `operation` to the values returned by `parser`. This parser can
+   * for example be used to eliminate left recursion which typically occurs in
+   * expression grammars.
+   */
   chainOneOrMore(operation: Parser<BinaryOp<T>, S>): Parser<T, S> {
     return this.bind((x) =>
       operation
@@ -293,6 +333,12 @@ export class Parser<T, S> {
     );
   }
 
+  /**
+   * Parse zero or more occurrences of `parser`, separated by `operation`.
+   * Return a value obtained by a left associative application of all functions
+   * returned by `operation` to the values returned by `parser`. If there are
+   * zero occurrences of `parser`, the `value` is returned.
+   */
   chainZeroOrMore(operation: Parser<BinaryOp<T>, S>, value: T): Parser<T, S> {
     return this.chainOneOrMore(operation).or(mret(value));
   }
